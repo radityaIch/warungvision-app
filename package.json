@@ -1,0 +1,24 @@
+{
+  "name": "warungvision-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WarungVision - Smart inventory management for warungs",
+  "workspaces": [
+    "warungvision-be",
+    "warungvision-fe"
+  ],
+  "scripts": {
+    "dev": "npm run dev:be & npm run dev:fe",
+    "dev:be": "npm --prefix warungvision-be run dev",
+    "dev:fe": "npm --prefix warungvision-fe run dev",
+    "build": "npm run build:be && npm run build:fe",
+    "build:be": "npm --prefix warungvision-be run build",
+    "build:fe": "npm --prefix warungvision-fe run build",
+    "start": "npm run start:be",
+    "start:be": "npm --prefix warungvision-be run start",
+    "start:fe": "npm --prefix warungvision-fe run start"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}

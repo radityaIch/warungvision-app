@@ -1,0 +1,119 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(STAFF)
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isActive  Boolean  @default(true)
+
+  scanEvents   ScanEvent[]
+  stockHistory StockHistory[]
+
+  @@index([storeId])
+  @@index([email])
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+model Store {
+  id        String   @id @default(cuid())
+  name      String
+  address   String
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users    User[]
+  products Product[]
+
+  @@index([name])
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  sku          String   @unique
+  name         String
+  description  String?
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id])
+  price        Float
+  stock        Int      @default(0)
+  image        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  scanItems    ScanItem[]
+  stockHistory StockHistory[]
+
+  @@index([storeId])
+  @@index([sku])
+  @@index([name])
+}
+
+model ScanEvent {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  status    ScanStatus  @default(queued)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  items ScanItem[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+enum ScanStatus {
+  queued
+  processing
+  completed
+  failed
+}
+
+model ScanItem {
+  id         String    @id @default(cuid())
+  scanEventId String
+  scanEvent  ScanEvent @relation(fields: [scanEventId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product   @relation(fields: [productId], references: [id])
+  count      Int
+
+  @@index([scanEventId])
+  @@index([productId])
+}
+
+model StockHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  date      DateTime @default(now())
+  stock     Int
+  delta     Int
+
+  @@index([userId])
+  @@index([productId])
+  @@index([date])
+}
