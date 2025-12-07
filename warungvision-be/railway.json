@@ -1,0 +1,4 @@
+{
+  "buildCommand": "bun install && bun run prisma:generate && prisma migrate deploy",
+  "startCommand": "bun src/index.ts"
+}
