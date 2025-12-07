@@ -25,8 +25,14 @@ const app = new Elysia()
   });
 
 const port = parseInt(process.env.PORT || "3000", 10);
-app.listen(port);
-console.log(`✅ Server running on http://localhost:${port}\n`);
+
+try {
+  app.listen(port);
+  console.log(`✅ Server running on http://localhost:${port}\n`);
+} catch (error) {
+  console.error("❌ Failed to start server:", error);
+  process.exit(1);
+}
 
 process.on("SIGINT", async () => {
   console.log("\n⏹️ Shutting down...");
