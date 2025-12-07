@@ -1,4 +1,8 @@
 {
   "buildCommand": "bun install && bun run prisma:generate && prisma migrate deploy",
-  "startCommand": "bun src/index.ts"
+  "startCommand": "bun src/index.ts",
+  "env": {
+    "PORT": "3000"
+  }
 }
+
