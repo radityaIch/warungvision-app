@@ -41,11 +41,11 @@ WarungVision empowers small shop owners to manage their daily operations effortl
 ### 2️⃣ 5-Minute Setup
 
 ```bash
-# Get this guide
-cat QUICK_START.md
+# Start with the quick start guide
+cat docs/QUICK_START.md
 
-# Or detailed setup
-cat SETUP_GUIDE.md
+# Or read the detailed setup guide
+cat docs/SETUP_GUIDE.md
 ```
 
 ### 3️⃣ Install & Run
@@ -73,12 +73,17 @@ npm run dev
 
 ## 📚 Documentation
 
+All documentation has been organized in the **[`docs/`](./docs/INDEX.md)** folder for easy navigation:
+
 | Document | Purpose |
 |----------|---------|
-| [QUICK_START.md](./QUICK_START.md) | **Start here!** 5-minute setup guide |
-| [SETUP_GUIDE.md](./SETUP_GUIDE.md) | Complete setup and deployment guide |
-| [WHATS_NEW.md](./WHATS_NEW.md) | What was implemented in this version |
-| [IMPLEMENTATION_COMPLETE.md](./IMPLEMENTATION_COMPLETE.md) | Detailed implementation summary |
+| [docs/INDEX.md](./docs/INDEX.md) | **📖 Documentation index & overview** |
+| [docs/QUICK_START.md](./docs/QUICK_START.md) | **Start here!** 5-minute setup guide |
+| [docs/SETUP_GUIDE.md](./docs/SETUP_GUIDE.md) | Complete setup and deployment guide |
+| [docs/WHATS_NEW.md](./docs/WHATS_NEW.md) | What was implemented in this version |
+| [docs/IMPLEMENTATION_COMPLETE.md](./docs/IMPLEMENTATION_COMPLETE.md) | Detailed implementation summary |
+| [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md) | All deployment options |
+| [docs/VERCEL_QUICK_START.md](./docs/VERCEL_QUICK_START.md) | Fast Vercel + Railway deployment |
 | [warungvision-be/README.md](./warungvision-be/README.md) | Backend documentation |
 | [warungvision-be/DEVELOPMENT.md](./warungvision-be/DEVELOPMENT.md) | Development guide |
 
@@ -391,7 +396,7 @@ cd warungvision-be && bun install
 cd ../warungvision-fe && npm install
 ```
 
-See [SETUP_GUIDE.md](./SETUP_GUIDE.md) for more troubleshooting.
+See [docs/SETUP_GUIDE.md](./docs/SETUP_GUIDE.md) for more troubleshooting.
 
 ---
 

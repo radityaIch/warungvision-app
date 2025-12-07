@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: warungvision-db
+    environment:
+      POSTGRES_USER: warung
+      POSTGRES_PASSWORD: warung123
+      POSTGRES_DB: warungvision
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U warung"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./warungvision-be
+      dockerfile: Dockerfile
+    container_name: warungvision-api
+    environment:
+      DATABASE_URL: postgresql://warung:warung123@postgres:5432/warungvision
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      CORS_ORIGIN: http://localhost:3001
+      KOLOSAL_API_KEY: ${KOLOSAL_API_KEY}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./warungvision-be:/app
+      - /app/node_modules
+    command: bun run dev
+
+  frontend:
+    build:
+      context: ./warungvision-fe
+      dockerfile: Dockerfile.next
+    container_name: warungvision-web
+    environment:
+      NEXT_PUBLIC_API_URL: http://backend:3000
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./warungvision-fe:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: warungvision-network
