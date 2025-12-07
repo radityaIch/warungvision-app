@@ -443,27 +443,31 @@ MIT License - See LICENSE file for details
 ## 🆘 Support
 
 ### Documentation
-- **Quick Setup**: Read [QUICK_START.md](./QUICK_START.md)
-- **Full Setup**: Read [SETUP_GUIDE.md](./SETUP_GUIDE.md)
-- **What's New**: Read [WHATS_NEW.md](./WHATS_NEW.md)
+- **Quick Setup**: Read [docs/QUICK_START.md](./docs/QUICK_START.md)
+- **Full Setup**: Read [docs/SETUP_GUIDE.md](./docs/SETUP_GUIDE.md)
+- **What's New**: Read [docs/WHATS_NEW.md](./docs/WHATS_NEW.md)
+- **Deployment**: Read [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
 
 ### API Help
 - Visit Swagger UI at http://localhost:3000/swagger
 - Check API_COLLECTION.json in backend folder
 
 ### Issues
-Check [SETUP_GUIDE.md](./SETUP_GUIDE.md) troubleshooting section
+Check [docs/SETUP_GUIDE.md](./docs/SETUP_GUIDE.md) troubleshooting section
 
 ---
 
 ## 🎉 Ready to Get Started?
 
 ```bash
+# View documentation index
+cat docs/INDEX.md
+
 # Quick start
-cat QUICK_START.md
+cat docs/QUICK_START.md
 
 # Or detailed guide
-cat SETUP_GUIDE.md
+cat docs/SETUP_GUIDE.md
 ```
 
 Then run:
