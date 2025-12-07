@@ -212,6 +212,154 @@ export class InsightService {
       totalActions: user.scanEvents.length + user.stockHistory.length,
     }));
   }
+
+  /**
+   * Get restock recommendations based on trends and low stock
+   */
+  async getRestockRecommendations(storeId: string, days: number = 30) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const products = await prisma.product.findMany({
+      where: { storeId },
+      include: {
+        stockHistory: {
+          where: {
+            date: {
+              gte: startDate,
+            },
+          },
+          select: { delta: true, date: true },
+        },
+      },
+    });
+
+    const recommendations = products
+      .map((product) => {
+        // Calculate average daily consumption
+        const totalConsumption = Math.abs(
+          product.stockHistory
+            .filter((h) => h.delta < 0)
+            .reduce((sum, h) => sum + h.delta, 0)
+        );
+        const averageDailyConsumption = totalConsumption / days;
+
+        // Estimate days until stockout (if trending negatively)
+        const daysUntilStockout =
+          averageDailyConsumption > 0
+            ? Math.ceil(product.stock / averageDailyConsumption)
+            : null;
+
+        // Determine if restock is needed
+        const needsRestock =
+          product.stock <= 5 || (daysUntilStockout ? daysUntilStockout <= 7 : false);
+
+        return {
+          productId: product.id,
+          sku: product.sku,
+          name: product.name,
+          currentStock: product.stock,
+          price: product.price,
+          averageDailyConsumption: Math.round(averageDailyConsumption * 100) / 100,
+          daysUntilStockout,
+          needsRestock,
+          priority: daysUntilStockout ? (daysUntilStockout <= 3 ? "HIGH" : "MEDIUM") : "LOW",
+          suggestedRestockQuantity: Math.max(
+            10,
+            Math.ceil(averageDailyConsumption * 14)
+          ), // 2 weeks supply
+        };
+      })
+      .filter((r) => r.needsRestock)
+      .sort((a, b) => {
+        // Sort by priority: HIGH > MEDIUM > LOW
+        const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+        return (
+          priorityOrder[a.priority as keyof typeof priorityOrder] -
+          priorityOrder[b.priority as keyof typeof priorityOrder]
+        );
+      });
+
+    return {
+      totalRecommendations: recommendations.length,
+      recommendations,
+      period: `${days} hari terakhir`,
+      generatedAt: new Date(),
+    };
+  }
+
+  /**
+   * Get sales insights and spending estimates
+   */
+  async getSalesInsights(storeId: string, days: number = 30) {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get all stock movements
+    const stockHistory = await prisma.stockHistory.findMany({
+      where: {
+        product: {
+          storeId,
+        },
+        date: {
+          gte: startDate,
+        },
+      },
+      include: {
+        product: {
+          select: { price: true, name: true, sku: true },
+        },
+      },
+    });
+
+    // Calculate spending estimate (negative deltas = sales/consumption)
+    let totalSpendingEstimate = 0;
+    let totalItemsSold = 0;
+    const topSoldProducts: any = {};
+
+    stockHistory.forEach((record) => {
+      if (record.delta < 0) {
+        const itemsSold = Math.abs(record.delta);
+        const spending = itemsSold * record.product.price;
+
+        totalSpendingEstimate += spending;
+        totalItemsSold += itemsSold;
+
+        // Track top sold products
+        if (!topSoldProducts[record.productId]) {
+          topSoldProducts[record.productId] = {
+            sku: record.product.sku,
+            name: record.product.name,
+            itemsSold: 0,
+            totalValue: 0,
+          };
+        }
+        topSoldProducts[record.productId].itemsSold += itemsSold;
+        topSoldProducts[record.productId].totalValue += spending;
+      }
+    });
+
+    // Calculate daily average
+    const averageDailySpending = totalSpendingEstimate / days;
+    const averageDailyItems = totalItemsSold / days;
+
+    // Sort top products
+    const topProducts = Object.values(topSoldProducts)
+      .sort((a: any, b: any) => b.itemsSold - a.itemsSold)
+      .slice(0, 10);
+
+    return {
+      period: `${days} hari terakhir`,
+      totalSpendingEstimate: Math.round(totalSpendingEstimate * 100) / 100,
+      totalItemsSold: Math.round(totalItemsSold),
+      averageDailySpending: Math.round(averageDailySpending * 100) / 100,
+      averageDailyItems: Math.round(averageDailyItems * 100) / 100,
+      projectedMonthlySpending:
+        Math.round(averageDailySpending * 30 * 100) / 100,
+      topSoldProducts: topProducts,
+      generatedAt: new Date(),
+    };
+  }
 }
 
 export const insightService = new InsightService();

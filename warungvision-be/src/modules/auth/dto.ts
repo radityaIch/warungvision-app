@@ -5,6 +5,9 @@ export const RegisterDtoSchema = z.object({
   password: z.string().min(6, "Password minimal 6 karakter"),
   name: z.string().min(1, "Nama harus diisi"),
   storeId: z.string().min(1, "Store ID harus diisi"),
+  storeName: z.string().optional(),
+  storeAddress: z.string().optional(),
+  storePhone: z.string().optional(),
 });
 
 export const LoginDtoSchema = z.object({

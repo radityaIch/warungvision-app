@@ -1,5 +1,5 @@
-import Elysia from "elysia";
-import { jwt } from "@elysiajs/jwt";
+// JWT utilities for signing and verifying tokens
+// Uses cryptographic functions to create and verify JWT tokens
 
 export interface JwtPayload {
   sub: string;
@@ -13,50 +13,92 @@ export interface JwtPayload {
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-this";
 
-const jwtInstance = jwt({
-  name: "jwt",
-  secret: JWT_SECRET,
-});
+/**
+ * Base64 URL encode
+ */
+function base64UrlEncode(str: string): string {
+  return Buffer.from(str)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
+}
 
-export const createJwtPlugin = () => {
-  return new Elysia({
-    name: "jwt",
-  })
-    .use(jwtInstance)
-    .derive(async ({ headers, jwt }) => {
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return {
-          user: null,
-          token: null,
-        };
-      }
+/**
+ * Base64 URL decode
+ */
+function base64UrlDecode(str: string): string {
+  str += "=".repeat((4 - (str.length % 4)) % 4);
+  return Buffer.from(str.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString();
+}
 
-      const token = authHeader.slice(7);
+/**
+ * Sign a JWT token
+ */
+export const signJwt = (payload: JwtPayload): string => {
+  const header = {
+    alg: "HS256",
+    typ: "JWT",
+  };
 
-      try {
-        const payload = await jwt.verify(token);
+  const now = Math.floor(Date.now() / 1000);
+  const claims = {
+    ...payload,
+    iat: now,
+    exp: now + 7 * 24 * 60 * 60, // 7 days
+  };
 
-        return {
-          user: payload as unknown as JwtPayload,
-          token,
-        };
-      } catch (error) {
-        return {
-          user: null,
-          token: null,
-        };
-      }
-    });
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(claims));
+  const message = `${encodedHeader}.${encodedPayload}`;
+
+  // Create HMAC signature
+  const hmac = new Bun.CryptoHasher("sha256")
+    .update(JWT_SECRET)
+    .update(message)
+    .digest("base64");
+
+  const signature = base64UrlEncode(hmac);
+
+  return `${message}.${signature}`;
 };
 
-export const signJwt = async (payload: JwtPayload): Promise<string> => {
-  const app = new Elysia().use(jwtInstance);
-  const { iat, exp, ...payloadWithoutClaims } = payload;
-  return app.decorator.jwt.sign(payloadWithoutClaims);
-};
+/**
+ * Verify a JWT token
+ */
+export const verifyJwt = (token: string): JwtPayload => {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) {
+      throw new Error("Invalid token format");
+    }
 
-export const verifyJwt = async (token: string): Promise<JwtPayload> => {
-  const app = new Elysia().use(jwtInstance);
-  return app.decorator.jwt.verify(token) as unknown as Promise<JwtPayload>;
+    const [encodedHeader, encodedPayload, signature] = parts;
+    const message = `${encodedHeader}.${encodedPayload}`;
+
+    // Verify signature
+    const hmac = new Bun.CryptoHasher("sha256")
+      .update(JWT_SECRET)
+      .update(message)
+      .digest("base64");
+
+    const expectedSignature = base64UrlEncode(hmac);
+
+    if (signature !== expectedSignature) {
+      throw new Error("Invalid signature");
+    }
+
+    // Decode payload
+    const payload = JSON.parse(base64UrlDecode(encodedPayload)) as JwtPayload;
+
+    // Check expiration
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      throw new Error("Token expired");
+    }
+
+    return payload;
+  } catch (error) {
+    throw new Error(`Invalid token: ${error instanceof Error ? error.message : "Unknown error"}`);
+  }
 };

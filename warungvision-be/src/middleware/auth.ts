@@ -1,52 +1,55 @@
 import Elysia from "elysia";
+import { bearer } from "@elysiajs/bearer";
 import { verifyJwt } from "../utils/jwt";
-import { AppError } from "../utils/errors";
 
-export interface AuthContext {
-  user: {
-    sub: string;
-    email: string;
-    role: string;
-    storeId: string;
-  } | null;
+export interface JWTPayload {
+  sub: string;
+  email: string;
+  role: string;
+  storeId: string;
 }
 
-export const requireAuth = new Elysia({
-  name: "require-auth",
-})
-  .derive(async ({ headers }) => {
-    const authHeader = headers.authorization;
+// SIMPLE & WORKS: Bearer plugin + our own JWT verification + derive to add to context
+export const requireAuth = (app: Elysia) =>
+  app
+    .use(bearer())
+    .derive(({ bearer: token }) => {
+      console.log("[🔐 AUTH MIDDLEWARE] CALLED!");
+      console.log("[🔐 AUTH MIDDLEWARE] Token received:", token ? "YES ✅" : "NO ❌");
+      
+      if (!token) {
+        console.error("[🔐 AUTH MIDDLEWARE] ❌ No bearer token in request!");
+        throw new Error("Missing bearer token");
+      }
 
-    if (!authHeader?.startsWith("Bearer ")) {
-      throw new AppError(401, "Unauthorized - Missing or invalid token");
-    }
+      try {
+        console.log("[🔐 AUTH MIDDLEWARE] Verifying token...");
+        const payload = verifyJwt(token);
+        console.log("[🔐 AUTH MIDDLEWARE] ✅ TOKEN VERIFIED! User:", payload.email);
+        
+        // Return object that gets merged into context
+        return { user: payload as JWTPayload };
+      } catch (err) {
+        console.error("[🔐 AUTH MIDDLEWARE] ❌ Token verification failed:", err instanceof Error ? err.message : err);
+        throw new Error("Invalid token");
+      }
+    });
 
-    const token = authHeader.slice(7);
+export const optionalAuth = (app: Elysia) =>
+  app
+    .use(bearer())
+    .derive(({ bearer: token }) => {
+      if (!token) {
+        console.log("[🔐 OPTIONAL AUTH] No token provided");
+        return { user: null as JWTPayload | null };
+      }
 
-    try {
-      const user = await verifyJwt(token);
-      return { user };
-    } catch (error) {
-      throw new AppError(401, "Unauthorized - Invalid token");
-    }
-  });
-
-export const optionalAuth = new Elysia({
-  name: "optional-auth",
-})
-  .derive(async ({ headers }) => {
-    const authHeader = headers.authorization;
-
-    if (!authHeader?.startsWith("Bearer ")) {
-      return { user: null };
-    }
-
-    const token = authHeader.slice(7);
-
-    try {
-      const user = await verifyJwt(token);
-      return { user };
-    } catch (error) {
-      return { user: null };
-    }
-  });
+      try {
+        const payload = verifyJwt(token);
+        console.log("[🔐 OPTIONAL AUTH] ✅ User:", payload.email);
+        return { user: payload as JWTPayload };
+      } catch (error) {
+        console.log("[🔐 OPTIONAL AUTH] Token invalid, continuing without auth");
+        return { user: null as JWTPayload | null };
+      }
+    });

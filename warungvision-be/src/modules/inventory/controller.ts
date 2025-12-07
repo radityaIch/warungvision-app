@@ -30,9 +30,10 @@ export const inventoryModule = new Elysia({
       }),
     }
   )
-  .get("/products", async (context) => {
-    const { user } = context as any;
-    return inventoryService.getAllProductsByStore(user!.storeId);
+  .get("/products", async ({ query, user }: { query: Record<string, any>; user?: any }) => {
+    const storeId = user?.storeId || query?.storeId;
+    if (!storeId) throw new Error("StoreId not found");
+    return inventoryService.getAllProductsByStore(storeId);
   })
   .get("/products/:id", async ({ params }) => {
     return inventoryService.getProduct(params.id);
@@ -60,10 +61,12 @@ export const inventoryModule = new Elysia({
   })
   .post(
     "/products/:id/stock",
-    async (context) => {
-      const { params, user, body } = context as any;
+    async (context: any) => {
+      const { params, user, body } = context;
+      console.log("[INVENTORY] Update stock - User context:", user);
+      if (!user) throw new Error("User not found in context");
       const dto = validateDto(UpdateStockDtoSchema, body);
-      return inventoryService.updateStock(params.id, user!.sub, dto);
+      return inventoryService.updateStock(params.id, user.sub, dto);
     },
     {
       body: t.Object({
@@ -78,12 +81,16 @@ export const inventoryModule = new Elysia({
       query.endDate
     );
   })
-  .get("/stats", async (context) => {
-    const { user } = context as any;
-    return inventoryService.getInventoryStats(user!.storeId);
+  .get("/stats", async ({ query, user }: { query: Record<string, any>; user?: any }) => {
+    let storeId = user?.storeId || query?.storeId;
+    if (!storeId) {
+      throw new Error("StoreId not found");
+    }
+    return inventoryService.getInventoryStats(storeId);
   })
-  .get("/low-stock", async (context) => {
-    const { user, query } = context as any;
+  .get("/low-stock", async ({ query, user }: { query: Record<string, any>; user?: any }) => {
+    let storeId = user?.storeId || query?.storeId;
+    if (!storeId) throw new Error("StoreId not found");
     const threshold = query.threshold ? parseInt(query.threshold as string) : 5;
-    return inventoryService.getLowStockProducts(user!.storeId, threshold);
+    return inventoryService.getLowStockProducts(storeId, threshold);
   });

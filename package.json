@@ -2,7 +2,7 @@
   "name": "warungvision-app",
   "version": "1.0.0",
   "private": true,
-  "description": "WarungVision - Smart inventory management for warungs",
+  "description": "WarungVision - Smart inventory management for warungs with AI-powered shelf scanning",
   "workspaces": [
     "warungvision-be",
     "warungvision-fe"
@@ -20,5 +20,17 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0"
-  }
+  },
+  "keywords": [
+    "inventory",
+    "ai",
+    "object-detection",
+    "retail",
+    "warehouse",
+    "stock-management",
+    "kolosal-ai",
+    "cloudinary"
+  ],
+  "author": "WarungVision Team",
+  "license": "MIT"
 }

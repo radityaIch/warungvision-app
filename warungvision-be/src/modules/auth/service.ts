@@ -3,8 +3,10 @@ import { AuthRepository } from "./repository";
 import { RegisterDto, LoginDto, UpdateProfileDto } from "./dto";
 import { AppError } from "../../utils/errors";
 import { signJwt } from "../../utils/jwt";
+import { getPrismaClient } from "../../utils/prisma";
 
 const authRepo = new AuthRepository();
+const prisma = getPrismaClient();
 
 export class AuthService {
   async register(registerDto: RegisterDto) {
@@ -18,9 +20,26 @@ export class AuthService {
       cost: 10,
     });
 
+    // Create store first if storeId is provided
+    let storeId = registerDto.storeId;
+    if (!storeId || storeId.startsWith("store_")) {
+      // Create new store if no valid storeId exists
+      const store = await prisma.store.create({
+        data: {
+          name: registerDto.storeName || "My Store",
+          address: registerDto.storeAddress || "",
+          phone: registerDto.storePhone || "",
+        },
+      });
+      storeId = store.id;
+    }
+
+    // Then create user with the store
     const user = await authRepo.create({
-      ...registerDto,
+      email: registerDto.email,
+      name: registerDto.name,
       password: hashedPassword,
+      storeId,
     });
 
     return {
@@ -28,6 +47,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       role: user.role,
+      storeId: user.storeId,
     };
   }
 
@@ -51,7 +71,7 @@ export class AuthService {
       throw new AppError(401, "Akun tidak aktif");
     }
 
-    const token = await signJwt({
+    const token = signJwt({
       sub: user.id,
       email: user.email,
       role: user.role,
@@ -59,12 +79,13 @@ export class AuthService {
     });
 
     return {
-      access_token: token,
+      token,
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
+        storeId: user.storeId,
       },
     };
   }

@@ -11,12 +11,15 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@elysiajs/bearer": "^1.4.1",
     "@elysiajs/cors": "^1.1.1",
     "@elysiajs/jwt": "^1.1.1",
     "@elysiajs/swagger": "^1.1.1",
     "@prisma/client": "^6.15.0",
     "bcrypt": "^6.0.0",
+    "cloudinary": "^1.40.0",
     "elysia": "latest",
+    "form-data": "^4.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {

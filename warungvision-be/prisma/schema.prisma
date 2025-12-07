@@ -71,14 +71,18 @@ model Product {
 }
 
 model ScanEvent {
-  id        String      @id @default(cuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  status    ScanStatus  @default(queued)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id               String       @id @default(cuid())
+  userId           String
+  user             User         @relation(fields: [userId], references: [id])
+  status           ScanStatus   @default(queued)
+  imageUrl         String?
+  imageCloudinaryId String?
+  processingTimeMs Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  items ScanItem[]
+  items   ScanItem[]
+  results ScanResult[]
 
   @@index([userId])
   @@index([status])
@@ -116,4 +120,21 @@ model StockHistory {
   @@index([userId])
   @@index([productId])
   @@index([date])
+}
+
+model ScanResult {
+  id            String   @id @default(cuid())
+  scanEventId   String
+  scanEvent     ScanEvent @relation(fields: [scanEventId], references: [id], onDelete: Cascade)
+  productName   String
+  confidence    Float
+  bboxX1        Float
+  bboxY1        Float
+  bboxX2        Float
+  bboxY2        Float
+  estimatedCount Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  @@index([scanEventId])
+  @@index([productName])
 }

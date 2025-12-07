@@ -2,6 +2,17 @@ import { getPrismaClient } from "../../utils/prisma";
 
 const prisma = getPrismaClient();
 
+export interface SaveScanResultInput {
+  scanEventId: string;
+  productName: string;
+  confidence: number;
+  bboxX1: number;
+  bboxY1: number;
+  bboxX2: number;
+  bboxY2: number;
+  estimatedCount: number;
+}
+
 export class ScanRepository {
   async createScanEvent(userId: string) {
     return prisma.scanEvent.create({
@@ -21,6 +32,7 @@ export class ScanRepository {
             product: true,
           },
         },
+        results: true,
         user: {
           select: {
             id: true,
@@ -41,6 +53,7 @@ export class ScanRepository {
             product: true,
           },
         },
+        results: true,
         user: {
           select: {
             id: true,
@@ -97,6 +110,30 @@ export class ScanRepository {
             product: true,
           },
         },
+        results: true,
+      },
+    });
+  }
+
+  async saveScanResult(data: SaveScanResultInput) {
+    return prisma.scanResult.create({
+      data,
+    });
+  }
+
+  async updateScanEventImage(
+    scanEventId: string,
+    imageUrl: string,
+    imageCloudinaryId: string,
+    processingTimeMs: number
+  ) {
+    return prisma.scanEvent.update({
+      where: { id: scanEventId },
+      data: {
+        imageUrl,
+        imageCloudinaryId,
+        processingTimeMs,
+        status: "completed",
       },
     });
   }
